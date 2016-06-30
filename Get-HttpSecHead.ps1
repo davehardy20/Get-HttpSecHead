@@ -13,6 +13,8 @@ Function Get-HttpSecHead
             This is a switch to provide a log of the output from the script, via the Start-Transcript cmdlet. The log file is stored in the working directory.
             .Parameter cred
             This is a switch to provide the ability to log into a website before accessing the headers, this is sometimes a requirement for development websites that are hidden behind some sort of logon requirement ie BAsic Auth.
+            .Parameter tls
+            This is a switch to force the use of TLS 1.2, PowerShell by default submits webrequest with TLS 1.0, which on some occasions the folowing error message, [220,19: Invoke-WebRequest] The underlying connection was closed: An unexpected error occurred on a send. is generated.
 
 
             Written by Dave Hardy, davehardy20@gmail.com @davehardy20

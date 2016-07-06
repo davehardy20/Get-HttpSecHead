@@ -15,12 +15,13 @@ Function Get-HttpSecHead
             This is a switch to provide the ability to log into a website before accessing the headers, this is sometimes a requirement for development websites that are hidden behind some sort of logon requirement ie BAsic Auth.
             .Parameter tls
             This is a switch to force the use of TLS 1.2, PowerShell by default submits webrequest with TLS 1.0, which on some occasions the folowing error message, [220,19: Invoke-WebRequest] The underlying connection was closed: An unexpected error occurred on a send. is generated.
-
+            .Parameter nontrust
+            This is a switch to force PowerShell NOT to validate the SSL certificate in the case of a self-signed or otherwise un-trusted certificate
 
             Written by Dave Hardy, davehardy20@gmail.com @davehardy20
             with consultancy from Mike Woodhead, @ydoow
 
-            Version 0.9.1
+            Version 0.9.2
 
             .Example
             PS C:> Get-Httphead -url https://www.linkedin.com
@@ -104,23 +105,57 @@ Function Get-HttpSecHead
         [string]$url,
 
         
-        [Parameter(Position = 1,Mandatory = $false,
+        [Parameter(Mandatory = $false,
         HelpMessage = "Log the script's output to a logfile")]
         [ValidateSet('y','Y','yes','Yes','YES')]
         [string]$log,
 
 
-        [Parameter(Position = 2,Mandatory = $false,
+        [Parameter(Mandatory = $false,
         HelpMessage = 'Some sites may require credentials to access the site, usually dev sites hidden behind a Basic Auth logon page')]
         [ValidateSet('y','Y','yes','Yes','YES')]
         [string]$cred,
 
         
-        [Parameter(Position = 1,Mandatory = $false,
-        HelpMessage = "Force TLS 1.2")]
+        [Parameter(Mandatory = $false,
+        HelpMessage = 'Force TLS 1.2')]
         [ValidateSet('y','Y','yes','Yes','YES')]
-        [string]$tls
+        [string]$tls,
+        
+        [Parameter(Mandatory = $false,
+        HelpMessage = 'Force Non-Trusted Cert')]
+        [ValidateSet('y','Y','yes','Yes','YES')]
+        [string]$nontrust
         )
+
+    #Ignore non-trusted SSL certificates
+    
+    Add-Type @"
+    using System;
+    using System.Net;
+    using System.Net.Security;
+    using System.Security.Cryptography.X509Certificates;
+    public class ServerCertificateValidationCallback
+    {
+        public static void Ignore()
+        {
+            ServicePointManager.ServerCertificateValidationCallback += 
+                delegate
+                (
+                    Object obj, 
+                    X509Certificate certificate, 
+                    X509Chain chain, 
+                    SslPolicyErrors errors
+                )
+                {
+                    return true;
+                };
+        }
+    }
+"@
+ 
+
+    
 
     #Timestamp Function
     Function Get-Timestamp 
@@ -214,6 +249,14 @@ Function Get-HttpSecHead
     if($tls)
     {
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    }
+
+    <#
+    Force PowerShell not to validate the SSL certificate in the case it is self-signed or otherwise non-trusted.
+    #>
+    if($nontrust)
+    {
+        [ServerCertificateValidationCallback]::Ignore()
     }
     
     #Are Creds required?

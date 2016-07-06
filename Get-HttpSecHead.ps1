@@ -93,44 +93,37 @@ Function Get-HttpSecHead
 
 
     #>
-    [cmdletbinding()]
-    Param
-    (
-        [Parameter(Position = 0,Mandatory = $true,
-                ValueFromPipeline = $true,
-                ValueFromPipelineByPropertyName = $true,
-        HelpMessage = 'The URL for inspection, e.g. https://www.linkedin.com')]
-        [ValidateNotNullorEmpty()]
-        [Alias('link')]
-        [string]$url,
-
-        
-        [Parameter(Mandatory = $false,
-        HelpMessage = "Log the script's output to a logfile")]
-        [ValidateSet('y','Y','yes','Yes','YES')]
-        [string]$log,
-
-
-        [Parameter(Mandatory = $false,
-        HelpMessage = 'Some sites may require credentials to access the site, usually dev sites hidden behind a Basic Auth logon page')]
-        [ValidateSet('y','Y','yes','Yes','YES')]
-        [string]$cred,
-
-        
-        [Parameter(Mandatory = $false,
-        HelpMessage = 'Force TLS 1.2')]
-        [ValidateSet('y','Y','yes','Yes','YES')]
-        [string]$tls,
-        
-        [Parameter(Mandatory = $false,
-        HelpMessage = 'Force Non-Trusted Cert')]
-        [ValidateSet('y','Y','yes','Yes','YES')]
-        [string]$nontrust
-        )
-
-    #Ignore non-trusted SSL certificates
-    
-    Add-Type @"
+	[cmdletbinding()]
+	Param
+	(
+		[Parameter(Position = 0, Mandatory = $true,
+				   ValueFromPipeline = $true,
+				   ValueFromPipelineByPropertyName = $true,
+				   HelpMessage = 'The URL for inspection, e.g. https://www.linkedin.com')]
+		[ValidateNotNullorEmpty()]
+		[Alias('link')]
+		[string]$url,
+		[Parameter(Mandatory = $false,
+				   HelpMessage = "Log the script's output to a logfile")]
+		[ValidateSet('y', 'Y', 'yes', 'Yes', 'YES')]
+		[string]$log,
+		[Parameter(Mandatory = $false,
+				   HelpMessage = 'Some sites may require credentials to access the site, usually dev sites hidden behind a Basic Auth logon page')]
+		[ValidateSet('y', 'Y', 'yes', 'Yes', 'YES')]
+		[string]$cred,
+		[Parameter(Mandatory = $false,
+				   HelpMessage = 'Force TLS 1.2')]
+		[ValidateSet('y', 'Y', 'yes', 'Yes', 'YES')]
+		[string]$tls,
+		[Parameter(Mandatory = $false,
+				   HelpMessage = 'Force Non-Trusted Cert')]
+		[ValidateSet('y', 'Y', 'yes', 'Yes', 'YES')]
+		[string]$nontrust
+	)
+	
+	#Ignore non-trusted SSL certificates
+	
+	Add-Type @"
     using System;
     using System.Net;
     using System.Net.Security;
@@ -153,208 +146,208 @@ Function Get-HttpSecHead
         }
     }
 "@
- 
-
-    
-
-    #Timestamp Function
-    Function Get-Timestamp 
-    {
-        $n = Get-Date
-        #pad values with leading 0 if necessary
-        $mo = (($n.Month).ToString()).PadLeft(2,'0')
-        $dy = (($n.Day).ToString()).PadLeft(2,'0')
-        $yr = ($n.Year).ToString()
-        $hr = (($n.hour).ToString()).PadLeft(2,'0')
-        $mn = (($n.Minute).ToString()).PadLeft(2,'0')
-        $sec = (($n.Second).ToString()).PadLeft(2,'0')
-        $result = $mo+$dy+$yr+$hr+$mn+$sec
-        return $result
-    }
- 
-    #HTTP Sec, Server, X-Powered and other X-Powered Headers
-    $secheaders = @(
-        'x-xss-protection', 
-        'Strict-Transport-Security', 
-        'Content-Security-Policy', 
-        'Content-Security-Policy-Report-Only', 
-        'X-Frame-Options', 
-        'X-Content-Type-Options', 
-        'Public-Key-Pins', 
-        'Public-Key-Pins-Report-Only'
-    )
-
-    $serverheader = @(
-        'Apache*', 
-        'Apache-Coyote*', 
-        'Apache Tomcat*', 
-        'ARR*', 
-        'BOA*', 
-        'cloudflare-nginx', 
-        'gse', 
-        'IBM_HTTP_Server*', 
-        'Iweb*', 
-        'JBoss*', 
-        'JBPAPP*', 
-        'JBossWeb*', 
-        'Joomla*', 
-        'JSF*', 
-        'JSP*'
-        'Liferay Portal Enterprise Edition*', 
-        'lighttpd*', 
-        'LiteSpeed*', 
-        'Microsoft*', 
-        'nginx*', 
-        'nweb*', 
-        'OpenCms*', 
-        'Omniture DC*', 
-        'Oracle*', 
-        'Sun-Java-System-Web-Server*', 
-        'Tomcat*', 
-        'TornadoServer*', 
-        'WEBrick*', 
-        'WebSphere Application Server*'
-    )
-
-    $xpowered = @(
-        'php*', 
-        'asp*', 
-        'mono*', 
-        'perl*', 
-        'ruby*', 
-        'Servlet*', 
-        'EasyEngine*'
-    )
-
-    $otherxpow = @(
-        'X-AspNet-Version', 
-        'X-AspNetMVC-Version', 
-        'X-OWA-Version'
-    )
-    
-    #Main Script
-    #Is a log required?
-    if($log)
-    {
-        $time = Get-Timestamp
-        $domain = ([System.Uri]$url).Host -replace '^www\.'
-        $logfile = '.\Sec-Headers-Log-'+$domain+'-'+$time+'.txt'
-        Start-Transcript -Path $logfile
-    }
-
+	
+	
+	
+	
+	#Timestamp Function
+	Function Get-Timestamp
+	{
+		$n = Get-Date
+		#pad values with leading 0 if necessary
+		$mo = (($n.Month).ToString()).PadLeft(2, '0')
+		$dy = (($n.Day).ToString()).PadLeft(2, '0')
+		$yr = ($n.Year).ToString()
+		$hr = (($n.hour).ToString()).PadLeft(2, '0')
+		$mn = (($n.Minute).ToString()).PadLeft(2, '0')
+		$sec = (($n.Second).ToString()).PadLeft(2, '0')
+		$result = $mo + $dy + $yr + $hr + $mn + $sec
+		return $result
+	}
+	
+	#HTTP Sec, Server, X-Powered and other X-Powered Headers
+	$secheaders = @(
+		'x-xss-protection',
+		'Strict-Transport-Security',
+		'Content-Security-Policy',
+		'Content-Security-Policy-Report-Only',
+		'X-Frame-Options',
+		'X-Content-Type-Options',
+		'Public-Key-Pins',
+		'Public-Key-Pins-Report-Only'
+	)
+	
+	$serverheader = @(
+		'Apache*',
+		'Apache-Coyote*',
+		'Apache Tomcat*',
+		'ARR*',
+		'BOA*',
+		'cloudflare-nginx',
+		'gse',
+		'IBM_HTTP_Server*',
+		'Iweb*',
+		'JBoss*',
+		'JBPAPP*',
+		'JBossWeb*',
+		'Joomla*',
+		'JSF*',
+		'JSP*'
+		'Liferay Portal Enterprise Edition*',
+		'lighttpd*',
+		'LiteSpeed*',
+		'Microsoft*',
+		'nginx*',
+		'nweb*',
+		'OpenCms*',
+		'Omniture DC*',
+		'Oracle*',
+		'Sun-Java-System-Web-Server*',
+		'Tomcat*',
+		'TornadoServer*',
+		'WEBrick*',
+		'WebSphere Application Server*'
+	)
+	
+	$xpowered = @(
+		'php*',
+		'asp*',
+		'mono*',
+		'perl*',
+		'ruby*',
+		'Servlet*',
+		'EasyEngine*'
+	)
+	
+	$otherxpow = @(
+		'X-AspNet-Version',
+		'X-AspNetMVC-Version',
+		'X-OWA-Version'
+	)
+	
+	#Main Script
+	#Is a log required?
+	if ($log)
+	{
+		$time = Get-Timestamp
+		$domain = ([System.Uri]$url).Host -replace '^www\.'
+		$logfile = '.\Sec-Headers-Log-' + $domain + '-' + $time + '.txt'
+		Start-Transcript -Path $logfile
+	}
+	
     <#
     Force TLS 1.2, some connections fail with the following error; [220,19: Invoke-WebRequest] The underlying connection was closed: An unexpected error occurred on a send.
     As standard PowerShell uses TLS 1.0 for web reuests
     #>
-    if($tls)
-    {
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    }
-
+	if ($tls)
+	{
+		[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+	}
+	
     <#
     Force PowerShell not to validate the SSL certificate in the case it is self-signed or otherwise non-trusted.
     #>
-    if($nontrust)
-    {
-        [ServerCertificateValidationCallback]::Ignore()
-    }
-    
-    #Are Creds required?
-    if($cred)
-    {
-        $user = Read-Host 'Enter Usernme: '
-        $securepass = Read-Host 'Enter Password: ' -AsSecureString
-        $credentials = New-Object System.Management.automation.PSCredential ($user, $securepass)
-    }
-
-    #User agent string is required to support Content-Security-Policy retrieval, natively Invoke-WebRequest does not send a user agent string that supports CSP
-    $UserAgent = 'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36'
-    
-    #Webrequest with creds or not
-    if($cred)
-    {
-    $webrequest = Invoke-WebRequest -Uri $url -MaximumRedirection 0 -ErrorAction Ignore -SessionVariable websession -UserAgent $UserAgent -Credential $credentials
-    }
-    else
-    {
-    $webrequest = Invoke-WebRequest -Uri $url -MaximumRedirection 0 -ErrorAction Ignore -SessionVariable websession -UserAgent $UserAgent
-    }
-     
-    $cookies = $websession.Cookies.GetCookies($url) 
-    Write-Host -Object "`n"
-    Write-Host 'Header Information for' $url
-    Write-Host -Object ($webrequest.Headers|Out-String)
-    Write-Host -ForegroundColor White -Object "HTTP security Headers`nConsider adding the values in RED to improve the security of the webserver. `n"
-    #Determine Security Headers
-    foreach ($sechead in $secheaders)
-    {
-        if($webrequest.Headers.ContainsKey($sechead))
-        {
-            Write-Host -ForegroundColor Green -Object $sechead, ' Header PRESENT'
-        } 
-        else
-        {
-            Write-Host -ForegroundColor Red -Object $sechead, ' Header MISSING'
-        }
-    }    
-    
-    Write-Host -Object "`n"
-
-    #Cookies
-    Write-Host 'Cookies Set by' $url
-    Write-Host -Object "Inspect cookies that don't have the HTTPOnly and Secure flags set.`n"
-    foreach ($cookie in $cookies) 
-    { 
-        Write-Host -Object "$($cookie.name) = $($cookie.value)"
-        if ($cookie.HttpOnly -eq 'True') 
-        {
-            Write-Host -ForegroundColor Green 'HTTPOnly Flag Set' = "$($cookie.HttpOnly)"
-        }
-        else 
-        {
-            Write-Host -ForegroundColor Red 'HTTPOnly Flag Set' = "$($cookie.HttpOnly)"
-        }
-        if ($cookie.Secure -eq 'True') 
-        {
-            Write-Host -ForegroundColor Green 'Secure Flag Set' = "$($cookie.Secure)"
-        }
-        else 
-        {
-            Write-Host -ForegroundColor Red 'Secure Flag Set' = "$($cookie.Secure)"
-        }
-        Write-Host 'Domain' = "$($cookie.Domain) `n"
-    }
-
-    #Determine Other Server Headers
-    Write-Host -Object "Other Headers that require attention`nThese headers give away information regarding the type of web server, web framework and versions.`nAttackers can use information this to determine vulnerable versions of software for instance.`n"
-
-    foreach ($head in $serverheader)
-    {
-        if($webrequest.Headers.Keys -match 'server' -and $webrequest.Headers.Values -like $head)
-        {
-            Write-Host -ForegroundColor Red 'Server: ' $webrequest.Headers.Server
-        }
-    }
-    #Determine X-Powered-By Header Present
-    foreach ($xpower in $xpowered)
-    {
-        if($webrequest.Headers.Keys -match 'x-powered-by' -and $webrequest.Headers.Values -like $xpower)
-        {
-            Write-Host -ForegroundColor Red 'X-Powered-By: ' $webrequest.Headers.'x-powered-by'
-        }
-    }
-    #Determine Other X- Headers
-    foreach ($otherx in $otherxpow)
-    {
-        if($webrequest.Headers.Keys -match $otherx)
-        {
-            Write-Host -ForegroundColor Red $otherx $webrequest.Headers.$otherx
-        }
-    }
-
-    #Stop logging
-    if($log)
-    {
-        Stop-Transcript
-    }
+	if ($nontrust)
+	{
+		[ServerCertificateValidationCallback]::Ignore()
+	}
+	
+	#Are Creds required?
+	if ($cred)
+	{
+		$user = Read-Host 'Enter Usernme: '
+		$securepass = Read-Host 'Enter Password: ' -AsSecureString
+		$credentials = New-Object System.Management.automation.PSCredential ($user, $securepass)
+	}
+	
+	#User agent string is required to support Content-Security-Policy retrieval, natively Invoke-WebRequest does not send a user agent string that supports CSP
+	$UserAgent = 'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36'
+	
+	#Webrequest with creds or not
+	if ($cred)
+	{
+		$webrequest = Invoke-WebRequest -Uri $url -MaximumRedirection 0 -ErrorAction Ignore -SessionVariable websession -UserAgent $UserAgent -Credential $credentials
+	}
+	else
+	{
+		$webrequest = Invoke-WebRequest -Uri $url -MaximumRedirection 0 -ErrorAction Ignore -SessionVariable websession -UserAgent $UserAgent
+	}
+	
+	$cookies = $websession.Cookies.GetCookies($url)
+	Write-Host -Object "`n"
+	Write-Host 'Header Information for' $url
+	Write-Host -Object ($webrequest.Headers | Out-String)
+	Write-Host -ForegroundColor White -Object "HTTP security Headers`nConsider adding the values in RED to improve the security of the webserver. `n"
+	#Determine Security Headers
+	foreach ($sechead in $secheaders)
+	{
+		if ($webrequest.Headers.ContainsKey($sechead))
+		{
+			Write-Host -ForegroundColor Green -Object $sechead, ' Header PRESENT'
+		}
+		else
+		{
+			Write-Host -ForegroundColor Red -Object $sechead, ' Header MISSING'
+		}
+	}
+	
+	Write-Host -Object "`n"
+	
+	#Cookies
+	Write-Host 'Cookies Set by' $url
+	Write-Host -Object "Inspect cookies that don't have the HTTPOnly and Secure flags set.`n"
+	foreach ($cookie in $cookies)
+	{
+		Write-Host -Object "$($cookie.name) = $($cookie.value)"
+		if ($cookie.HttpOnly -eq 'True')
+		{
+			Write-Host -ForegroundColor Green 'HTTPOnly Flag Set' = "$($cookie.HttpOnly)"
+		}
+		else
+		{
+			Write-Host -ForegroundColor Red 'HTTPOnly Flag Set' = "$($cookie.HttpOnly)"
+		}
+		if ($cookie.Secure -eq 'True')
+		{
+			Write-Host -ForegroundColor Green 'Secure Flag Set' = "$($cookie.Secure)"
+		}
+		else
+		{
+			Write-Host -ForegroundColor Red 'Secure Flag Set' = "$($cookie.Secure)"
+		}
+		Write-Host 'Domain' = "$($cookie.Domain) `n"
+	}
+	
+	#Determine Other Server Headers
+	Write-Host -Object "Other Headers that require attention`nThese headers give away information regarding the type of web server, web framework and versions.`nAttackers can use information this to determine vulnerable versions of software for instance.`n"
+	
+	foreach ($head in $serverheader)
+	{
+		if ($webrequest.Headers.Keys -match 'server' -and $webrequest.Headers.Values -like $head)
+		{
+			Write-Host -ForegroundColor Red 'Server: ' $webrequest.Headers.Server
+		}
+	}
+	#Determine X-Powered-By Header Present
+	foreach ($xpower in $xpowered)
+	{
+		if ($webrequest.Headers.Keys -match 'x-powered-by' -and $webrequest.Headers.Values -like $xpower)
+		{
+			Write-Host -ForegroundColor Red 'X-Powered-By: ' $webrequest.Headers.'x-powered-by'
+		}
+	}
+	#Determine Other X- Headers
+	foreach ($otherx in $otherxpow)
+	{
+		if ($webrequest.Headers.Keys -match $otherx)
+		{
+			Write-Host -ForegroundColor Red $otherx $webrequest.Headers.$otherx
+		}
+	}
+	
+	#Stop logging
+	if ($log)
+	{
+		Stop-Transcript
+	}
 }

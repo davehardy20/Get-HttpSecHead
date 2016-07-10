@@ -1,5 +1,5 @@
 ﻿#Requires -version 3
-#
+
 Function Get-HttpSecHead
 {
     <#
@@ -21,7 +21,7 @@ Function Get-HttpSecHead
             Written by Dave Hardy, davehardy20@gmail.com @davehardy20
             with consultancy from Mike Woodhead, @ydoow
 
-            Version 0.9.2
+            Version 2.0.0
 
             .Example
             PS C:> Get-Httphead -url https://www.linkedin.com
@@ -224,130 +224,156 @@ Function Get-HttpSecHead
 		'X-AspNetMVC-Version',
 		'X-OWA-Version'
 	)
-	
-	#Main Script
-	#Is a log required?
-	if ($log)
+	Try
 	{
-		$time = Get-Timestamp
-		$domain = ([System.Uri]$url).Host -replace '^www\.'
-		$logfile = '.\Sec-Headers-Log-' + $domain + '-' + $time + '.txt'
-		Start-Transcript -Path $logfile
-	}
-	
+		#Main Script
+		$Error.Clear()
+		#Is a log required?
+		if ($log)
+		{
+			$time = Get-Timestamp
+			$domain = ([System.Uri]$url).Host -replace '^www\.'
+			$logfile = '.\Sec-Headers-Log-' + $domain + '-' + $time + '.txt'
+			Start-Transcript -Path $logfile
+		}
+		
     <#
     Force TLS 1.2, some connections fail with the following error; [220,19: Invoke-WebRequest] The underlying connection was closed: An unexpected error occurred on a send.
     As standard PowerShell uses TLS 1.0 for web reuests
     #>
-	if ($tls)
-	{
-		[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-	}
-	
+		if ($tls)
+		{
+			[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+		}
+		
     <#
     Force PowerShell not to validate the SSL certificate in the case it is self-signed or otherwise non-trusted.
     #>
-	if ($nontrust)
-	{
-		[ServerCertificateValidationCallback]::Ignore()
-	}
-	
-	#Are Creds required?
-	if ($cred)
-	{
-		$user = Read-Host 'Enter Usernme: '
-		$securepass = Read-Host 'Enter Password: ' -AsSecureString
-		$credentials = New-Object System.Management.automation.PSCredential ($user, $securepass)
-	}
-	
-	#User agent string is required to support Content-Security-Policy retrieval, natively Invoke-WebRequest does not send a user agent string that supports CSP
-	$UserAgent = 'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36'
-	
-	#Webrequest with creds or not
-	if ($cred)
-	{
-		$webrequest = Invoke-WebRequest -Uri $url -MaximumRedirection 0 -ErrorAction Ignore -SessionVariable websession -UserAgent $UserAgent -Credential $credentials
-	}
-	else
-	{
-		$webrequest = Invoke-WebRequest -Uri $url -MaximumRedirection 0 -ErrorAction Ignore -SessionVariable websession -UserAgent $UserAgent
-	}
-	
-	$cookies = $websession.Cookies.GetCookies($url)
-	Write-Host -Object "`n"
-	Write-Host 'Header Information for' $url
-	Write-Host -Object ($webrequest.Headers | Out-String)
-	Write-Host -ForegroundColor White -Object "HTTP security Headers`nConsider adding the values in RED to improve the security of the webserver. `n"
-	#Determine Security Headers
-	foreach ($sechead in $secheaders)
-	{
-		if ($webrequest.Headers.ContainsKey($sechead))
+		if ($nontrust)
 		{
-			Write-Host -ForegroundColor Green -Object $sechead, ' Header PRESENT'
+			[ServerCertificateValidationCallback]::Ignore()
+		}
+		
+		#Are Creds required?
+		if ($cred)
+		{
+			$user = Read-Host 'Enter Usernme: '
+			$securepass = Read-Host 'Enter Password: ' -AsSecureString
+			$credentials = New-Object System.Management.automation.PSCredential ($user, $securepass)
+		}
+		
+		#User agent string is required to support Content-Security-Policy retrieval, natively Invoke-WebRequest does not send a user agent string that supports CSP
+		$UserAgent = 'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36'
+		
+		#Webrequest with creds or not
+		if ($cred)
+		{
+			$webrequest = Invoke-WebRequest -Uri $url -MaximumRedirection 0 -ErrorAction Ignore -SessionVariable websession -UserAgent $UserAgent -Credential $credentials
 		}
 		else
 		{
-			Write-Host -ForegroundColor Red -Object $sechead, ' Header MISSING'
+			$webrequest = Invoke-WebRequest -Uri $url -MaximumRedirection 0 -ErrorAction Ignore -SessionVariable websession -UserAgent $UserAgent
+		}
+		
+		$cookies = $websession.Cookies.GetCookies($url)
+		Write-Host -Object "`n"
+		Write-Host 'Header Information for' $url
+		Write-Host -Object ($webrequest.Headers | Out-String)
+		Write-Host -ForegroundColor White -Object "HTTP security Headers`nConsider adding the values in RED to improve the security of the webserver. `n"
+		#Determine Security Headers
+		foreach ($sechead in $secheaders)
+		{
+			if ($webrequest.Headers.ContainsKey($sechead))
+			{
+				Write-Host -ForegroundColor Green -Object $sechead, ' Header PRESENT'
+			}
+			else
+			{
+				Write-Host -ForegroundColor Red -Object $sechead, ' Header MISSING'
+			}
+		}
+		
+		Write-Host -Object "`n"
+		
+		#Cookies
+		Write-Host 'Cookies Set by' $url
+		Write-Host -Object "Inspect cookies that don't have the HTTPOnly and Secure flags set.`n"
+		foreach ($cookie in $cookies)
+		{
+			Write-Host -Object "$($cookie.name) = $($cookie.value)"
+			if ($cookie.HttpOnly -eq 'True')
+			{
+				Write-Host -ForegroundColor Green 'HTTPOnly Flag Set' = "$($cookie.HttpOnly)"
+			}
+			else
+			{
+				Write-Host -ForegroundColor Red 'HTTPOnly Flag Set' = "$($cookie.HttpOnly)"
+			}
+			if ($cookie.Secure -eq 'True')
+			{
+				Write-Host -ForegroundColor Green 'Secure Flag Set' = "$($cookie.Secure)"
+			}
+			else
+			{
+				Write-Host -ForegroundColor Red 'Secure Flag Set' = "$($cookie.Secure)"
+			}
+			Write-Host 'Domain' = "$($cookie.Domain) `n"
+		}
+		
+		#Determine Other Server Headers
+		Write-Host -Object "Other Headers that require attention`nThese headers give away information regarding the type of web server, web framework and versions.`nAttackers can use information this to determine vulnerable versions of software for instance.`n"
+		
+		foreach ($head in $serverheader)
+		{
+			if ($webrequest.Headers.Keys -match 'server' -and $webrequest.Headers.Values -like $head)
+			{
+				Write-Host -ForegroundColor Red 'Server: ' $webrequest.Headers.Server
+			}
+		}
+		#Determine X-Powered-By Header Present
+		foreach ($xpower in $xpowered)
+		{
+			if ($webrequest.Headers.Keys -match 'x-powered-by' -and $webrequest.Headers.Values -like $xpower)
+			{
+				Write-Host -ForegroundColor Red 'X-Powered-By: ' $webrequest.Headers.'x-powered-by'
+			}
+		}
+		#Determine Other X- Headers
+		foreach ($otherx in $otherxpow)
+		{
+			if ($webrequest.Headers.Keys -match $otherx)
+			{
+				Write-Host -ForegroundColor Red $otherx $webrequest.Headers.$otherx
+			}
+		}
+		
+		#Stop logging
+		if ($log)
+		{
+			Stop-Transcript
 		}
 	}
-	
-	Write-Host -Object "`n"
-	
-	#Cookies
-	Write-Host 'Cookies Set by' $url
-	Write-Host -Object "Inspect cookies that don't have the HTTPOnly and Secure flags set.`n"
-	foreach ($cookie in $cookies)
+	Catch [System.Net.WebException]
 	{
-		Write-Host -Object "$($cookie.name) = $($cookie.value)"
-		if ($cookie.HttpOnly -eq 'True')
+		Write-Host -ForegroundColor Red 'An error was caught.'
+		if (($error.Exception.Message) -match "Could not establish trust relationship for the SSL/TLS")
 		{
-			Write-Host -ForegroundColor Green 'HTTPOnly Flag Set' = "$($cookie.HttpOnly)"
+			$error.Clear()
+			$output = 'The site SSL certificate is self-signed or otherwise not trusted, please use the -nontrust switch'
 		}
-		else
+		ElseIf (($error.Exception.Message) -match "An unexpected error occurred on a send")
 		{
-			Write-Host -ForegroundColor Red 'HTTPOnly Flag Set' = "$($cookie.HttpOnly)"
+			$error.Clear()
+			$output = 'The site only supports TLS v1.2, please use the -tls switch'
 		}
-		if ($cookie.Secure -eq 'True')
+		Else
 		{
-			Write-Host -ForegroundColor Green 'Secure Flag Set' = "$($cookie.Secure)"
-		}
-		else
-		{
-			Write-Host -ForegroundColor Red 'Secure Flag Set' = "$($cookie.Secure)"
-		}
-		Write-Host 'Domain' = "$($cookie.Domain) `n"
-	}
-	
-	#Determine Other Server Headers
-	Write-Host -Object "Other Headers that require attention`nThese headers give away information regarding the type of web server, web framework and versions.`nAttackers can use information this to determine vulnerable versions of software for instance.`n"
-	
-	foreach ($head in $serverheader)
-	{
-		if ($webrequest.Headers.Keys -match 'server' -and $webrequest.Headers.Values -like $head)
-		{
-			Write-Host -ForegroundColor Red 'Server: ' $webrequest.Headers.Server
+			$output = 'Unhandled Exception: ' + $Error.Exception.Message
+			$error.Clear()
 		}
 	}
-	#Determine X-Powered-By Header Present
-	foreach ($xpower in $xpowered)
+	Finally
 	{
-		if ($webrequest.Headers.Keys -match 'x-powered-by' -and $webrequest.Headers.Values -like $xpower)
-		{
-			Write-Host -ForegroundColor Red 'X-Powered-By: ' $webrequest.Headers.'x-powered-by'
-		}
-	}
-	#Determine Other X- Headers
-	foreach ($otherx in $otherxpow)
-	{
-		if ($webrequest.Headers.Keys -match $otherx)
-		{
-			Write-Host -ForegroundColor Red $otherx $webrequest.Headers.$otherx
-		}
-	}
-	
-	#Stop logging
-	if ($log)
-	{
-		Stop-Transcript
+		Write-Host -ForegroundColor Yellow $output
 	}
 }

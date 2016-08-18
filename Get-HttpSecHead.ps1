@@ -103,27 +103,23 @@ Function Get-HttpSecHead
 		[ValidateNotNullorEmpty()]
 		[Alias('link')]
 		[string]$url,
-		[Parameter(Mandatory = $false,
-				   HelpMessage = "Log the script's output to a logfile")]
+		[Parameter(HelpMessage = "Log the script's output to a logfile")]
 		[ValidateSet('y', 'Y', 'yes', 'Yes', 'YES')]
 		[string]$log,
-		[Parameter(Mandatory = $false,
-				   HelpMessage = 'Some sites may require credentials to access the site, usually dev sites hidden behind a Basic Auth logon page')]
+		[Parameter(HelpMessage = 'Some sites may require credentials to access the site, usually dev sites hidden behind a Basic Auth logon page')]
 		[ValidateSet('y', 'Y', 'yes', 'Yes', 'YES')]
 		[string]$cred,
-		[Parameter(Mandatory = $false,
-				   HelpMessage = 'Force TLS 1.2')]
+		[Parameter(HelpMessage = 'Force TLS 1.2')]
 		[ValidateSet('y', 'Y', 'yes', 'Yes', 'YES')]
 		[string]$tls,
-		[Parameter(Mandatory = $false,
-				   HelpMessage = 'Force Non-Trusted Cert')]
+		[Parameter(HelpMessage = 'Force Non-Trusted Cert')]
 		[ValidateSet('y', 'Y', 'yes', 'Yes', 'YES')]
 		[string]$nontrust
 	)
 	
 	#Ignore non-trusted SSL certificates
 	
-	Add-Type @"
+	Add-Type @'
     using System;
     using System.Net;
     using System.Net.Security;
@@ -145,7 +141,7 @@ Function Get-HttpSecHead
                 };
         }
     }
-"@
+'@
 	
 	
 	
@@ -232,7 +228,7 @@ Function Get-HttpSecHead
 		if ($log)
 		{
 			$time = Get-Timestamp
-			$domain = ([System.Uri]$url).Host -replace '^www\.'
+			$domain = ([uri]$url).Host -replace '^www\.'
 			$logfile = '.\Sec-Headers-Log-' + $domain + '-' + $time + '.txt'
 			Start-Transcript -Path $logfile
 		}
@@ -353,15 +349,15 @@ Function Get-HttpSecHead
 			Stop-Transcript
 		}
 	}
-	Catch [System.Net.WebException]
+	Catch [Net.WebException]
 	{
 		Write-Host -ForegroundColor Red 'An error was caught.'
-		if (($error.Exception.Message) -match "Could not establish trust relationship for the SSL/TLS")
+		if (($error.Exception.Message) -match 'Could not establish trust relationship for the SSL/TLS')
 		{
 			$error.Clear()
 			$output = 'The site SSL certificate is self-signed or otherwise not trusted, please use the -nontrust switch'
 		}
-		ElseIf (($error.Exception.Message) -match "An unexpected error occurred on a send")
+		ElseIf (($error.Exception.Message) -match 'An unexpected error occurred on a send')
 		{
 			$error.Clear()
 			$output = 'The site only supports TLS v1.2, please use the -tls switch'

@@ -276,7 +276,8 @@ Function Get-HttpSecHead
 		Write-Host 'Header Information for' $url
 		Write-Host -Object ($webrequest.Headers | Out-String)
 		Write-Host -ForegroundColor White -Object "HTTP security Headers`nConsider adding the values in RED to improve the security of the webserver. `n"
-		#Determine Security Headers
+		
+        #Determine Security Headers
 		foreach ($sechead in $secheaders)
 		{
 			if ($webrequest.Headers.ContainsKey($sechead))
@@ -351,7 +352,7 @@ Function Get-HttpSecHead
 	}
 	Catch [Net.WebException]
 	{
-		Write-Host -ForegroundColor Red 'An error was caught.'
+		Write-Warning -Message 'An error was caught.'
 		if (($error.Exception.Message) -match 'Could not establish trust relationship for the SSL/TLS')
 		{
 			$error.Clear()
